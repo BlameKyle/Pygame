@@ -1,0 +1,230 @@
+import pygame
+import random
+from pygame.locals import *
+import threading
+import shelve
+health = 275
+def printit():
+    threading.Timer(25.0, printit).start()
+    global health    
+    health = (health+25)
+printit()
+
+
+
+        
+
+
+
+ 
+
+class Player(pygame.sprite.Sprite):
+
+    def __init__(self):
+        super(Player, self).__init__()
+        self.image = pygame.image.load('Smile2.png').convert_alpha()
+        self.image.set_colorkey((255, 255, 255), RLEACCEL)
+        self.rect = self.image.get_rect()
+        
+    
+    def update(self, pressed_keys):
+        if pressed_keys[K_w]:
+            self.rect.move_ip(0, -2)
+        if pressed_keys[K_s]:
+            self.rect.move_ip(0, 2)
+        if pressed_keys[K_a]:
+            self.rect.move_ip(-2, 0)
+        if pressed_keys[K_d]:
+            self.rect.move_ip(2, 0)
+            
+
+        if self.rect.left < 0:
+            self.rect.left = 0
+        elif self.rect.right > 1300:
+            self.rect.right = 1300
+        if self.rect.top <= 0:
+            self.rect.top = 0
+        elif self.rect.bottom >= 600:
+            self.rect.bottom = 600
+
+class Opponent(pygame.sprite.Sprite):
+        
+    def __init__(self):
+        super(Opponent, self).__init__()
+        self.image = pygame.image.load('bullet.png').convert_alpha()
+        self.image.set_colorkey((255, 255, 255), RLEACCEL)
+        self.rect = self.image.get_rect(
+            center=(1350, random.randint(0, 600))
+        )
+        self.speed = random.randint(3,5)
+
+    def update(self):
+        self.rect.move_ip(-self.speed, 0)
+        if self.rect.right < 0:
+            self.kill()
+highscore = 0
+
+
+
+
+
+
+
+pygame.init()
+time = pygame.time.get_ticks()
+
+
+
+
+
+
+screen = pygame.display.set_mode((1300, 600))
+
+
+player = Player()
+
+welcome = True
+
+
+    
+
+
+background = pygame.Surface(screen.get_size())
+background.fill((179, 193, 214))
+
+
+players = pygame.sprite.Group()
+opponents = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
+all_sprites.add(player)
+
+
+ADDOPPONENT = pygame.USEREVENT + 1
+
+
+pygame.time.set_timer(ADDOPPONENT, 160)
+
+    
+
+
+
+running = True
+
+
+clock = pygame.time.Clock()
+fps = 1000
+
+
+while running:
+    time = pygame.time.get_ticks()
+    
+    if health > 200:
+        player.image = pygame.image.load('Smile2.png').convert_alpha()
+        
+    
+    if health < 200:
+        player.image = pygame.image.load('Smile3.png').convert_alpha()
+    if health < 100:
+        player.image = pygame.image.load('Smile4.png').convert_alpha()
+    
+        
+    clock.tick(fps)
+    
+   
+    for event in pygame.event.get():
+       
+        if event.type == KEYDOWN:
+           
+            if event.key == K_ESCAPE:
+                running = False
+        
+        elif event.type == QUIT:
+            running = False
+       
+        elif(event.type == ADDOPPONENT):
+            new_opponent = Opponent()
+            opponents.add(new_opponent)
+            all_sprites.add(new_opponent)
+    
+
+    screen.blit(background, (0, 0))
+    
+
+    pressed_keys = pygame.key.get_pressed()
+
+    basicfont = pygame.font.SysFont(None, 48)
+    text = basicfont.render("Use WASD To Control!", True, (0, 0, 0))
+    screen.blit(text, (525, 0))
+
+    basicfont = pygame.font.SysFont(None, 48)
+    text = basicfont.render("Score", True, (0, 0, 0))
+    screen.blit(text, (635, 50))
+
+    
+    basicfont = pygame.font.SysFont(None, 48)
+    text = basicfont.render("Health", True, (0, 0, 0))
+    screen.blit(text, (625, 550))
+
+    basicfont = pygame.font.SysFont(None, 48)
+    text = basicfont.render(str(health) , True, (255, 0, 0), (179, 193, 214))
+    screen.blit(text, (650, 500))
+
+    basicfont = pygame.font.SysFont(None, 48)
+    text = basicfont.render(str(time) , True, (65, 142, 59), (179, 193, 214))
+    screen.blit(text, (650, 100))
+    
+   
+    player.update(pressed_keys)
+    
+   
+    opponents.update()
+    score = time
+
+   
+    for entity in all_sprites:
+        screen.blit(entity.image, entity.rect)
+        
+    
+    if pygame.sprite.spritecollideany(player, opponents):
+        health -= 1
+    elif health <= 0:
+        
+        
+        print("Your score was " + str(time))
+        import pickle
+
+
+
+        try:
+            with open('highscore.dat', 'rb') as file:
+                highscore = pickle.load(file)
+        except:
+            highscore < score
+
+        
+       
+       
+
+        if score > highscore:
+            highscore = score
+        
+
+        print "High score: " , highscore
+            
+
+
+        with open('highscore.dat', 'wb') as file:
+            pickle.dump(highscore, file)
+      
+        running = False
+
+    if health <0:
+        health = 0
+    
+
+        
+
+    pygame.display.flip()
+
+
+pygame.quit()
